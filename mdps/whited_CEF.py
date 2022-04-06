@@ -54,47 +54,7 @@ class MDPWhited_CEF(MDP, ABC):
 
 
 class cMDPWhited_CEF(cMDP, ABC):
-    """
-    ### Description
-    Basic Model in Strebulaev and Whited (2012), *Dynamic Models and Structural Estimation*
-
-        Define $e(k_t,I_t,z_t) = \pi(k_t,z_t)-\psi(I_t,k_t)-I_t$
-
-        where $k_t$ is beginning of period capital stock, $I_t$ is investment in capital,
-        $\pi(k_t,z_t)$ is a profit function, and $z_t$ is the exogenous shock that is Markov,
-        and $\psi(I_t,k_t)$ Is an investment adjustment cost term.
-
-        Firm solves
-        $$\max_{k_{t+j}} E_t[\sum_{j=0}^{\infty} \gamma^j e(k,I,z)]$$ where $\gamma=(1/1+r)$
-        s.t. $k_{t+1} = (1-\delta)k_t+I_t$.
-
-        **Assume**
-        - $\ln z_t$ is AR(1) with autocorrelation $\rho$ and variance $\sigma_{\epsilon}$
-        - $\pi = zk^{\theta}$ where $0<\theta<1$
-        - adjustment costs either 0 or fixed or convex
-
-        **RL setup**
-        - State $s_t = (k_t,z_t)$ (if Markov)
-        - Control/action $I_t$
-        - State transition: $k_{t+1} = (1-\delta)k_t+I_t$ and AR(1) for $z_t$
-        - Reward: $e(s_t,a_t)$
-
-
-    ### Context Variables (5 in total; all float)
-    gamma: the discount rate
-    delta: the capital depreciation rate
-    theta: the concavity of production function (pi = z * (k**theta) )
-    rho: the persistence of the shock process
-    sigma: the standard deviation or noise of the shock process
-    The context vector is an (ordered) array of (gamma, delta, theta, rho, sigma)
-    Default: (0.98, 0.15, 0.7, 0.7, 0.15)
-
-    ### MDP Variables
-    States: k (capital), z (shock)
-    Action: i (investment)
-    Reward: e (cash flow)
-    """
-
+    
     def __init__(self, config: Dict[str, Any] = None):
         if config is None:
             config = {}
