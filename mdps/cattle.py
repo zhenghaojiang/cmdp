@@ -48,7 +48,7 @@ class MDPCattle(MDP, ABC):
         # h_new = (1 - rho_h) * mu_h + h_curr + np.random.normal(0, sigma_h, 1)[0]
         h_new = (1 - rho_h) * mu_h + h_curr
         # update p
-        p_new = 2.85 + p_curr + np.random.normal(0, 4, 1)[0]
+        p_new = 2.5 + p_curr + np.random.normal(0, 4, 1)[0]
 
         # reward
         '''reward = ((p_new - m_new) * c_new 
