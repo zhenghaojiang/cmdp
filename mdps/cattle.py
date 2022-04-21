@@ -35,18 +35,19 @@ class MDPCattle(MDP, ABC):
             action = int(action[0])
         # discrete action denoting fraction of breeding stock
         # c_new = action * x_curr / (self.action_space.n - 1.)
-        c_curr = action * k_curr * 0.8 / (self.action_space.n - 1.)
+        c_curr = action * k_curr * 0.7 / (self.action_space.n - 1.)
         # update x
         x_pp_new = x_p_curr
         # x_p_new = x_curr
-        x_p_new = k_curr - c_curr
+        x_curr = k_curr - c_curr
+        x_p_new = x_curr
         # x_new = x_curr + g * x_pp_curr - c_new
         k_new = k_curr + g * x_pp_curr - c_curr
         # update m
         m_new = (1 - rho_m) * mu_m + m_curr + np.random.normal(0, sigma_m, 1)[0]
         # update h
-        # h_new = (1 - rho_h) * mu_h + h_curr + np.random.normal(0, sigma_h, 1)[0]
-        h_new = (1 - rho_h) * mu_h + h_curr
+        h_new = (1 - rho_h) * mu_h + h_curr + np.random.normal(0, sigma_h, 1)[0]
+        # h_new = (1 - rho_h) * mu_h + h_curr
         # update p
         p_new = 2.5 + p_curr + np.random.normal(0, 4, 1)[0]
 
@@ -55,8 +56,8 @@ class MDPCattle(MDP, ABC):
                     - h_new * x_new -gamma_0 * h_new * g * x_p_new - gamma_1 * h_new * g * x_pp_new 
                     - espilon_sq * (x_new ** 2 + x_p_new ** 2 + x_pp_new ** 2 + c_new ** 2))'''
         reward = ((p_curr - m_curr) * c_curr 
-                    - h_curr * x_p_new -gamma_0 * h_curr * g * x_p_curr - gamma_1 * h_curr * g * x_pp_curr 
-                    - espilon_sq * (x_p_new ** 2 + x_p_curr ** 2 + x_pp_curr ** 2 + c_curr ** 2))
+                    - h_curr * x_curr -gamma_0 * h_curr * g * x_p_curr - gamma_1 * h_curr * g * x_pp_curr 
+                    - espilon_sq * (x_curr ** 2 + x_p_curr ** 2 + x_pp_curr ** 2 + c_curr ** 2))
         assert isinstance(reward, float)
         
         
@@ -95,10 +96,30 @@ class cMDPCattle(cMDP, ABC):
         env_config.setdefault('observation_space', gym.spaces.Box(np.zeros((17,)),
                                                                    np.full((17,), np.inf),
                                                                    dtype=np.float32))
-        env_config.setdefault('max_steps', 220)
+        env_config.setdefault('max_steps', 100)
         env_config.setdefault('initial_state', (100., 100., 200., 35., 5., 50.))
 
         return env_config
 
-    def likelihood(self):
-        pass
+    def likelihood(self, obs_prev, action_prev, obs_curr, reward_prev):
+        gamma_0, gamma_1, g, rho_h, rho_m, sigma_h, sigma_m, espilon_sq, mu_h, mu_m = self.context
+        x_pp_prev, x_p_prev, k_prev, m_prev, _, p_prev = obs_prev[:6]
+        _, _, _, m_curr, h_curr, p_curr = obs_curr[:6]
+        r_prev = reward_prev
+        c_prev = action_prev * k_prev * 0.8 / (self.action_space.n - 1.)
+        x_prev = k_prev - c_prev
+        h_prev = (((p_prev - m_prev) * c_prev - reward_prev
+                    - espilon_sq * (x_prev ** 2 + x_p_prev ** 2 + x_pp_prev ** 2 + c_prev ** 2))
+                    / (x_prev + gamma_0 * g * x_p_prev + gamma_1 * g * x_pp_prev))
+        
+        eps_p = p_curr - 2.5 - p_prev
+        eps_m = m_curr - (1 - rho_m) * mu_m - m_prev
+        eps_h = h_curr - (1 - rho_h) * mu_h - h_prev
+
+        likelihood_p = stats.norm.pdf(eps_p, loc=0, scale=4)
+        likelihood_m = stats.norm.pdf(eps_m, loc=0, scale=sigma_m)
+        likelihood_h = stats.norm.pdf(eps_h, loc=0, scale=sigma_h)
+        likelihood = likelihood_p * likelihood_m * likelihood_h
+
+        return np.nan_to_num(likelihood, copy=False)
+
