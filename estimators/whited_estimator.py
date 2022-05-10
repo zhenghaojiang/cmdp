@@ -57,7 +57,7 @@ class EstWhited():
                 obs_, reward_, _, _ = env_.step(action_)
                 # estimate likelihood if r >= 1
                 action_arr_[n_] = action_
-                q = env_.likelihood(gt_obs_arr_[t_], action_arr_[n_], obs_, reward_)
+                q = env_.likelihood(gt_obs_arr_[t_], action_arr_[n_], obs_, reward_, estimate_index_)
                 qs_[n_] = q
                 state_arr_[n_] = np.copy(env_.mdp.state)
             if t_ >= 1:
