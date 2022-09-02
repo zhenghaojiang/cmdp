@@ -13,6 +13,8 @@ parser = argparse.ArgumentParser(description="big big elephant")
 
 parser.add_argument("-i", "--index", type=int, required=True, help="index of working task")
 parser.add_argument("-s", "--sample-size", type=int, required=True, help="sample size")
+parser.add_argument("-n", "--node-name", type=str, required=False, default="unknown", help="node name") # TODO: get node name from env:SLURMD_NODENAME
+parser.add_argument("-c", "--num-cpus", type=int, required=False, choices=range(1, 8), default=2, help="number of CPUs allocated")
 
 args = parser.parse_args()
 index = args.index
@@ -23,11 +25,11 @@ sample_size = args.sample_size
 # config logger
 logger = logging.getLogger(__name__)
 sys_handler = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("%(asctime)s [%(index)3s] [%(sample_size)4s] [%(filename)15s:%(lineno)-4s] [%(levelname)-5s] %(message)s")
+formatter = logging.Formatter("%(asctime)s [%(node_name)s] [%(index)3s] [%(sample_size)4s] [%(filename)15s:%(lineno)-4s] [%(levelname)-5s] %(message)s")
 sys_handler.setFormatter(formatter)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(sys_handler)
-logger = logging.LoggerAdapter(logger, {"index": args.index, "sample_size": args.sample_size})
+logger = logging.LoggerAdapter(logger, {"index": args.index, "sample_size": args.sample_size, "node_name": args.node_name})
 logger.info("init logger")
 
 
@@ -113,11 +115,12 @@ c = {"context_distribution":
     }
 
 ray.shutdown()
-ray.init()
+ray.init(num_cpus=args.num_cpus, include_dashboard=False, _system_config={"worker_register_timeout_seconds": 600})
 
 expert = ppo.PPOTrainer(env=cMDPWhited, config={
     "env_config": c,
     "framework": "torch",  # config to pass to env class
+    "num_workers": args.num_cpus - 1,
 })
 
 rews = []
@@ -134,11 +137,12 @@ c_mis = {"context_distribution":
     }
 
 ray.shutdown()
-ray.init()
+ray.init(num_cpus=args.num_cpus, include_dashboard=False, _system_config={"worker_register_timeout_seconds": 600})
 
 solver_mis = ppo.PPOTrainer(env=cMDPWhited, config={
     "env_config": c_mis,
     "framework": "torch",  # config to pass to env class
+    "num_workers": args.num_cpus - 1,
 })
 
 rews = []
@@ -156,10 +160,11 @@ c_uniform = {'context_distribution':
                                  upper_bound_vector=np.array([0.98, 0.15, 0.8, 0.7, 0.15]))}
 
 ray.shutdown()
-ray.init()
+ray.init(num_cpus=args.num_cpus, include_dashboard=False, _system_config={"worker_register_timeout_seconds": 600})
 solver_uniform = ppo.PPOTrainer(env=cMDPWhited, config={
                                                     "env_config": c_uniform,
                                                     "framework": "torch",  # config to pass to env class
+    "num_workers": args.num_cpus - 1,
                                                 })
 
 rews = []
@@ -254,11 +259,12 @@ else:
 imp_context_distribution = ParticleDistribution(dim=5, particles=context_particles, n_particles=N)
 
 ray.shutdown()
-ray.init()
+ray.init(num_cpus=args.num_cpus, include_dashboard=False, _system_config={"worker_register_timeout_seconds": 600})
 
 imp_solver = ppo.PPOTrainer(env=cMDPWhited, config={
                                                 "env_config":  {"context_distribution": imp_context_distribution},
                                                 "framework": "torch",
+    "num_workers": args.num_cpus - 1,
                                             })
 
 for update_round in range(4):
