@@ -113,14 +113,13 @@ class cMDPWhited(cMDP, ABC):
         env_config.setdefault('shock_process_fn', log_ar1)  # z process: z(z0, rho, sigma)
         return env_config
     
-    def likelihood(self, obs_prev, action_prev, obs_curr, reward_prev, estimate_index = 2):
+    def likelihood(self, obs_prev, action_prev, obs_curr, reward_prev):
         gamma, delta, theta, rho, sigma = self.context
-        k_prev, z_prev = obs_prev[:2]
+        k_prev, _ = obs_prev[:2]
         _, z_curr = obs_curr[:2]
         r_prev = reward_prev
         I_prev = action_prev * k_prev / (self.action_space.n - 1.)
-        if estimate_index == 2:
-            z_prev = (r_prev+I_prev+self.env_config['psi_fn'](I_prev,k_prev))/(k_prev**theta)
+        z_prev = (r_prev+I_prev+self.env_config['psi_fn'](I_prev,k_prev))/(k_prev**theta)
         
         eps = np.log(z_curr)-rho*np.log(z_prev)
         likelihood = stats.norm.pdf(eps, loc=0, scale=sigma)
