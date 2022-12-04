@@ -125,3 +125,13 @@ class cMDPWhited(cMDP, ABC):
         likelihood = stats.norm.pdf(eps, loc=0, scale=sigma)
         # print("z_prev:", z_prev, "z_curr:", z_curr, "eps:", eps, "likelihood:", likelihood, "rho", rho)
         return np.nan_to_num(likelihood)
+
+    def likelihood_rho(self, obs_prev, action_prev, obs_curr, reward_prev):
+        gamma, delta, theta, rho, sigma = self.context
+        _, z_prev = obs_prev[:2]
+        _, z_curr = obs_curr[:2]
+        
+        eps = np.log(z_curr)-rho*np.log(z_prev)
+        likelihood = stats.norm.pdf(eps, loc=0, scale=sigma)
+        # print("z_prev:", z_prev, "z_curr:", z_curr, "eps:", eps, "likelihood:", likelihood, "rho", rho)
+        return np.nan_to_num(likelihood)
